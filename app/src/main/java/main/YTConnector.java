@@ -67,6 +67,8 @@ public class YTConnector extends Task {
 	        channelsListByUsernameRequest.setId(Data.getCurrentConfiguration().getChannel_id());
 	        ChannelListResponse response = channelsListByUsernameRequest.execute();
 	        Channel channel = response.getItems().get(0);
+	        logText("Znaleziono kanał " + channel.getSnippet().getTitle());
+	        setProgress(10);
 	        
 
 	        //uzyskiwanie danych dotyczących listy uploadów
@@ -93,7 +95,7 @@ public class YTConnector extends Task {
 
 	        
 	        //pobieranie spełniających kryteria filmów
-	        System.out.println("Pobieranie listy wrzuconych, przed zadaną datą, filmów... ");
+	        logText("Pobieranie listy wrzuconych, przed zadaną datą, filmów... ");
 	        int temp = 0;
 	        do {
 	            playlistItemRequest.setPageToken(nextToken);
@@ -116,7 +118,7 @@ public class YTConnector extends Task {
 	           
 	        } while (nextToken != null);
 	        
-
+	        setProgress(40);
 
 	        
 	        
@@ -131,8 +133,7 @@ public class YTConnector extends Task {
 	        	data = Instant.ofEpochMilli(dataPublikacji.getValue()).atZone(ZoneId.systemDefault()).toLocalDate();
 	        	
 	        	if(data.isAfter(datapoczatkowa)) {
-	        		System.out.println(playlistItemList.get(i).getSnippet().getTitle());
-	        		System.out.println(data);
+	        		logText(playlistItemList.get(i).getSnippet().getTitle() + " wrzucony " + data);
 	        		
 	        		System.out.println("Dodaje do listy: " + playlistItemList.get(i).getSnippet().getTitle());
 	            	videosIDs.add(playlistItemList.get(i).getSnippet().getResourceId().getVideoId());
@@ -142,7 +143,7 @@ public class YTConnector extends Task {
 	        	
 	        	
 	        }
-	        
+	        setProgress(60);
 	        //swego rodzaju error handler w wypadku braku video które można zliczyć
 	        if(videosIDs.size() == 0) {
 	        	
@@ -158,13 +159,14 @@ public class YTConnector extends Task {
 	        System.out.println(Double.valueOf(videosIDs.size()/49));
 	        int numberOfRequests =  (int) Math.ceil(Double.valueOf(videosIDs.size())/49);
 	        
-//	        System.out.println("Liczba zaptyań: " + numberOfRequests);
-//	        System.out.println("Pobrano: " + videosIDs.size());
+	        logText("Liczba zaptyań: " + numberOfRequests);
+	        logText("Pobrano: " + videosIDs.size());
 	        
 	        int remainingRequests = videosIDs.size();
 	        int videosIDsCounter = 0;
 	        int stringBuilderCounter = 0;
 	        
+	        logText("Tworzenie requesta...");
 	        while(remainingRequests != 0) {
 	        	
 	        	stringRequests.add(new StringBuilder());
@@ -177,6 +179,7 @@ public class YTConnector extends Task {
 	        	} else {
 	        		currentRequestSize = 49;
 	        	}
+	        	
 	        	
 	        	for(int i = 0; i < currentRequestSize; i++) {	        	
 		        	if(i == (1-videosIDs.size())) {
@@ -200,6 +203,8 @@ public class YTConnector extends Task {
 	        	
 	        }
 	        
+	        logText("Utworzono requesty.");
+	        
 	           
 	      //lista video, w której przechowywane będą wszystkie obiekty typu video
 	        List<Video> videosList = new ArrayList<Video>();
@@ -212,14 +217,15 @@ public class YTConnector extends Task {
 	        	APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
 	        			.setId(stringRequests.get(i).toString()).execute());
 	        	videosList.addAll(APIResponses.get(i).getItems());
+	        	logText("Wykonano request " + i + " z " + stringRequests.size());
 	        	
 	        }
 	     
 	        
-	        System.out.println("Pobrano " + videosList.size() + " filmów");
+	        logText("Pobrano " + videosList.size() + " filmów");
+	        setProgress(80);
 	        
-	        
-	        System.out.println(videosList.get(0).getSnippet().getTitle());
+	        logText(videosList.get(0).getSnippet().getTitle());
 	        Double kwota = 0.0;
 	        BigInteger likesAmount;
 	        
@@ -237,8 +243,8 @@ public class YTConnector extends Task {
 	        	
 	        for(int i = 0; i < videosList.size(); i++) {
 	        	
-	        	System.out.println("Tytuł wideo: " + videosList.get(i).getSnippet().getTitle());
-	        	System.out.println("Liczba lapek w góre: " + videosList.get(i).getStatistics().getLikeCount());
+	        	logText("Tytuł wideo: " + videosList.get(i).getSnippet().getTitle());
+	        	logText("Liczba lapek w góre: " + videosList.get(i).getStatistics().getLikeCount());
 	        	likesAmount = videosList.get(i).getStatistics().getLikeCount();
 	        	liczbaLapekWGore = liczbaLapekWGore + likesAmount.intValue();
 	        	kwota = Double.valueOf(format.format(liczbaLapekWGore * 0.01));
@@ -246,16 +252,16 @@ public class YTConnector extends Task {
 	        }
 	        
 	        
-	        System.out.println("-----------------------");
-	        System.out.println("Wynik:");
-	        System.out.println("Liczba filmow: " + videosList.size());
-	        System.out.println("Liczba lapek w góre w sumie: " + liczbaLapekWGore);
-	        System.out.println("Zebrana kwota: " + format.format(Double.valueOf(BigDecimal.valueOf(liczbaLapekWGore).multiply(
+	        logText("-----------------------");
+	        logText("Wynik:");
+	        logText("Liczba filmow: " + videosList.size());
+	        logText("Liczba lapek w góre w sumie: " + liczbaLapekWGore);
+	        logText("Zebrana kwota: " + format.format(Double.valueOf(BigDecimal.valueOf(liczbaLapekWGore).multiply(
 	        		BigDecimal.valueOf(Double.valueOf(Data.getCurrentConfiguration().getPrzelicznik()))).toString())) + " zł");
 	        
 
-	        System.out.println("Ustawiono widok.");
-
+	        logText("Ustawiono widok.");
+	        setProgress(100);
 	        
 	        try {
 				TimeUnit.SECONDS.sleep(1);
@@ -297,6 +303,8 @@ public class YTConnector extends Task {
 			
 			Thread.sleep(10000);
 			
+			logText("Wykonuje request ponownie...");
+			setProgress(0);
 			liczbaLapekWGore = 0;
 			initialization = false;
 			APIResponses.clear();
@@ -355,6 +363,16 @@ public class YTConnector extends Task {
 			}
     		
     	});
+	}
+	
+	public void logText(String text) {
+		
+		db.Data.getLoading().getText_area().appendText(LocalDate.now() + ": " + text + "\n");
+		
+	}
+	
+	public void setProgress(double num) {
+		db.Data.getLoading().getProgressBar().setProgress(num);
 	}
 
 }

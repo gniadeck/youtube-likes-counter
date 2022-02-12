@@ -20,7 +20,9 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 
 public class configController implements Initializable{
 
@@ -123,10 +125,20 @@ public class configController implements Initializable{
 					return;
 				}
 				Parent root;
+				Parent loadingParent;
 				try {
 					root = FXMLLoader.load(getClass().getClassLoader().getResource("fxml/counterScreen.fxml"));
 					input_apiKey.getScene().setRoot(root);
 					System.out.println("Wyświetlam licznik, zgodnie z konfiguracją: " + Data.getCurrentConfiguration());
+					
+					loadingParent = FXMLLoader.load(getClass().getClassLoader().getResource("fxml/loadingScreen.fxml"));
+		            Stage stage = new Stage();
+		            stage.setTitle("Ładowanie");
+		            stage.setScene(new Scene(loadingParent, 640, 400));
+		            stage.show();
+					
+					
+					
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					Alert alert = new Alert(AlertType.ERROR, "Wystąpił błąd " + e.getStackTrace().toString(), ButtonType.OK);

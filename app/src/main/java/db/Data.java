@@ -14,10 +14,12 @@ import java.util.ArrayList;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import configuration.Configuration;
+import gui.controllers.loadingController;
 
 //klasa wczytująca i modyfikująca zserializowane dane
 public abstract class Data {
 	
+	static loadingController loading;
 	static ArrayList<Configuration> configurations;
 	static Configuration currentConfiguration = new Configuration();
 	
@@ -97,6 +99,18 @@ public abstract class Data {
 	public static void setCurrentConfiguration(Configuration currentConfiguration) {
 		Data.currentConfiguration = currentConfiguration;
 	}
+
+	public static loadingController getLoading() {
+		return loading;
+	}
+
+	public static void setLoading(loadingController loading) {
+		Data.loading = loading;
+	}
+
+
+
+
 	
 	
 	
