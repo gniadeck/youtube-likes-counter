@@ -9,7 +9,10 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -367,7 +370,7 @@ public class YTConnector extends Task {
 	
 	public void logText(String text) {
 		
-		db.Data.getLoading().getText_area().appendText(LocalDate.now() + ": " + text + "\n");
+		db.Data.getLoading().getText_area().appendText(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)) + ": " + text + "\n");
 		
 	}
 	

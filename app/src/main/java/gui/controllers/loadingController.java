@@ -40,6 +40,11 @@ public class loadingController implements Initializable{
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		
+		scrollPane.needsLayoutProperty().addListener((observable, oldValue, newValue) -> {
+		    if (!newValue) {
+		        scrollPane.setVvalue(1.0);
+		    }
+		});
 		System.out.println(text_area.getId());
 		db.Data.setLoading(this);
 		text_area.setEditable(false);
