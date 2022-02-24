@@ -9,6 +9,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
 
 public class loadingController implements Initializable{
 
@@ -21,6 +22,9 @@ public class loadingController implements Initializable{
     @FXML
     private ScrollPane scrollPane;
 
+    @FXML
+    private VBox vBox;
+    
 	public ProgressBar getProgressBar() {
 		return progressBar;
 	}
@@ -40,23 +44,20 @@ public class loadingController implements Initializable{
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		
-		scrollPane.needsLayoutProperty().addListener((observable, oldValue, newValue) -> {
-		    if (!newValue) {
-		        scrollPane.setVvalue(1.0);
-		    }
-		});
+		    
 		System.out.println(text_area.getId());
 		db.Data.setLoading(this);
 		text_area.setEditable(false);
 		text_area.appendText("Rozpoczynam ładowanie \n");
-		
-		
-		
-	}
-    
-    
-    
-    
-    
 
+	}
 }
+
+		
+		
+		
+
+
+
+
+

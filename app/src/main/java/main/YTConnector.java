@@ -312,6 +312,7 @@ public class YTConnector extends Task {
 			initialization = false;
 			APIResponses.clear();
 			videosList.clear();
+			
 	        for(int i = 0; i < stringRequests.size(); i++) {
 	        	
 	        	APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
