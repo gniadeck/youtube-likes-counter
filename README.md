@@ -119,5 +119,9 @@ Kliknij *Wyświetl licznik* zaloguj się i baw się dobrze.
 
 **UWAGA Czasem Google potrzebuje trochę czasu, aby zaktualizować dane dot. API Jeżeli postępowałeś wg. tego poradnika, zaczekaj maksymalnie kilka godzin (u nas z reguły uprawnienia API aktualizowały się do 30 minut)**
 
+## Update 24.02.22
+Dodano równolegle działające okienko z ładowaniem i logami
+![image](https://user-images.githubusercontent.com/77535280/155524078-37bad384-f65b-4e86-b23e-a175c3a73c89.png)
+
 
 
