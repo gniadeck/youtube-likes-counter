@@ -124,4 +124,4 @@ Dodano równolegle działające okienko z ładowaniem i logami
 ![image](https://user-images.githubusercontent.com/77535280/155524078-37bad384-f65b-4e86-b23e-a175c3a73c89.png)
 
 
-
+[![CodeFactor](https://www.codefactor.io/repository/github/komp15/youtube-likes-counter/badge)](https://www.codefactor.io/repository/github/komp15/youtube-likes-counter)
