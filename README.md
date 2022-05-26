@@ -128,3 +128,4 @@ Dodano równolegle działające okienko z ładowaniem i logami
 
 
 [![CodeFactor](https://www.codefactor.io/repository/github/komp15/youtube-likes-counter/badge)](https://www.codefactor.io/repository/github/komp15/youtube-likes-counter)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/d82a2c4266934deaa24fd524ac152dfe)](https://www.codacy.com/gh/komp15/youtube-likes-counter/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=komp15/youtube-likes-counter&amp;utm_campaign=Badge_Grade)
