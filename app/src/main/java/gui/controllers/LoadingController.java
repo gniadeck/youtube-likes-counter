@@ -11,7 +11,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 
-public class loadingController implements Initializable{
+public class LoadingController implements Initializable{
 
     @FXML
     private ProgressBar progressBar;
@@ -44,11 +44,11 @@ public class loadingController implements Initializable{
 		this.progressBar = progressBar;
 	}
 
-	public TextArea getText_area() {
+	public TextArea getTextArea() {
 		return text_area;
 	}
 
-	public void setText_area(TextArea text_area) {
+	public void setTextArea(TextArea text_area) {
 		this.text_area = text_area;
 	}
 

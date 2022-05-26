@@ -14,7 +14,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.Parent;
 
-public class displayConfigurationController implements Initializable{
+public class DisplayConfigurationController implements Initializable{
 
     @FXML
     private Button button_saveView;

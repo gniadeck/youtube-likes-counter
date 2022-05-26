@@ -7,7 +7,7 @@ import java.util.Locale;
 
 import gui.controllers.MainScreenController;
 
-public class Animations {
+public class AnimationUtils {
 	
 	static MainScreenController MainScreenController;
 	
@@ -41,7 +41,6 @@ public class Animations {
 	public static void animateUpThumbsUp(int first, int last) throws InterruptedException {
 
 		int difference = Math.abs(first-last);
-		long waitingtime = 1;
 		
 		if(first<last) {
 			for(int i = 0; i < difference; i++) {

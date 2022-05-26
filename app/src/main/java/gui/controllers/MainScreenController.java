@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import javax.xml.crypto.Data;
-
-import gui.Animations;
+import gui.AnimationUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -39,7 +37,7 @@ public class MainScreenController implements Initializable{
 
 		YTConnector YTConnector = new YTConnector();
 		YTConnector.setMainScreenController(this);
-		Animations animations = new Animations();
+		AnimationUtils animations = new AnimationUtils();
 		animations.setMainScreenController(this);
 
 		Thread ytAPI = new Thread(YTConnector);
@@ -58,10 +56,10 @@ public class MainScreenController implements Initializable{
 
 	private void validateAndSetFields() {
 		if(db.Data.getCurrentConfiguration().getHeader_text() != null && db.Data.getCurrentConfiguration().getHeader_text() != "") {
-			setText_header(db.Data.getCurrentConfiguration().getHeader_text());
+			setTextHeader(db.Data.getCurrentConfiguration().getHeader_text());
 		}
 		if(db.Data.getCurrentConfiguration().getMiddle_text() != null && db.Data.getCurrentConfiguration().getMiddle_text() != "") {
-			setText_middle(db.Data.getCurrentConfiguration().getMiddle_text());
+			setTextMiddle(db.Data.getCurrentConfiguration().getMiddle_text());
 		}
 	}
 
@@ -82,19 +80,19 @@ public class MainScreenController implements Initializable{
 	}
 
 
-	public Text getText_header() {
+	public Text getTextHeader() {
 		return text_header;
 	}
 
-	public void setText_header(String text_header) {
+	public void setTextHeader(String text_header) {
 		this.text_header.setText(text_header);
 	}
 
-	public Text getText_middle() {
+	public Text getTextMiddle() {
 		return text_middle;
 	}
 
-	public void setText_middle(String text_middle) {
+	public void setTextMiddle(String text_middle) {
 		this.text_middle.setText(text_middle);
 	}
 

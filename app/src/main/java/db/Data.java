@@ -8,12 +8,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import configuration.Configuration;
-import gui.controllers.loadingController;
+import gui.controllers.LoadingController;
 
 //klasa wczytująca i modyfikująca zserializowane dane
 public abstract class Data {
 
-	static loadingController loadingController;
+	static LoadingController loadingController;
 	static Configuration currentConfiguration = new Configuration();
 	
 	
@@ -75,11 +75,11 @@ public abstract class Data {
 		Data.currentConfiguration = currentConfiguration;
 	}
 
-	public static loadingController getLoadingController() {
+	public static LoadingController getLoadingController() {
 		return loadingController;
 	}
 
-	public static void setLoadingController(loadingController loadingController) {
+	public static void setLoadingController(LoadingController loadingController) {
 		Data.loadingController = loadingController;
 	}
 }

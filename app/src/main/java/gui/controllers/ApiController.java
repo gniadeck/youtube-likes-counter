@@ -25,7 +25,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 
-public class apiController implements Initializable {
+public class ApiController implements Initializable {
 
     @FXML
     private Button button_saveAndQuit;
@@ -109,7 +109,6 @@ public class apiController implements Initializable {
 
         Gson gson = new Gson();
         String resultingJson = gson.toJson(jelement);
-        FileWriter writer = new FileWriter(jsonFile);
 
         Files.write(resultingJson, jsonFile, Charsets.UTF_8);
         System.out.println("Zapisano " + value + " do " + key);
@@ -119,12 +118,7 @@ public class apiController implements Initializable {
 
 
     public boolean validateData(String clientId, String clientSecret, String projectId) {
-
-        if (clientId == null || clientSecret == null || projectId == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return clientId != null && clientSecret != null && projectId != null;
     }
 
 

@@ -28,7 +28,7 @@ import com.google.api.services.youtube.model.Video;
 import com.google.api.services.youtube.model.VideoListResponse;
 
 import db.Data;
-import gui.Animations;
+import gui.AnimationUtils;
 import gui.controllers.MainScreenController;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -41,8 +41,6 @@ public class YTConnector extends Task {
     @Override
     protected Object call() throws IOException {
 
-        int likesChangeAmount;
-        double moneyChangeAmount;
         boolean initialization = true;
 
         //inicjalizacja usługi youtube
@@ -193,9 +191,9 @@ public class YTConnector extends Task {
             } else {
 
 				try {
-					Animations.animateUpPLN(currentPlnValueDouble, Double.parseDouble(BigDecimal.valueOf(liczbaLapekWGore)
+					AnimationUtils.animateUpPLN(currentPlnValueDouble, Double.parseDouble(BigDecimal.valueOf(liczbaLapekWGore)
 							.multiply(BigDecimal.valueOf(Double.parseDouble(Data.getCurrentConfiguration().getPrzelicznik()))).toString()));
-					Animations.animateUpThumbsUp(currentThumbsUpNumber, liczbaLapekWGore);
+					AnimationUtils.animateUpThumbsUp(currentThumbsUpNumber, liczbaLapekWGore);
 				} catch (InterruptedException e) {
 					throw new RuntimeException(e);
 				}
@@ -357,7 +355,7 @@ public class YTConnector extends Task {
 
     public void logText(String text) {
         Platform.runLater(() -> {
-            Data.getLoadingController().getText_area().appendText(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)) + ": " + text + "\n");
+            Data.getLoadingController().getTextArea().appendText(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)) + ": " + text + "\n");
         });
 
 
