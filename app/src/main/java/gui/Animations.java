@@ -8,6 +8,8 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import gui.controllers.MainScreenController;
+import lombok.Getter;
+import lombok.Setter;
 
 public class Animations {
 	
@@ -17,14 +19,13 @@ public class Animations {
 		
 		BigDecimal firstBD = BigDecimal.valueOf(first);
 		BigDecimal lastBD = BigDecimal.valueOf(last);
-		double difference = Math.abs(Double.valueOf(firstBD.subtract(lastBD).toString()));
-		BigDecimal differenceBD = BigDecimal.valueOf(difference);
+		BigDecimal differenceBD =firstBD.subtract(lastBD).abs();
 		long waitingtime = 1;
 		DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.getDefault());
         otherSymbols.setDecimalSeparator('.');
         DecimalFormat format = new DecimalFormat("0.00" , otherSymbols);
 		
-        if(firstBD.compareTo(lastBD) == -1) {
+        if(firstBD.compareTo(lastBD) < 0) {
         	
         	for(int i = 0; i < differenceBD.multiply(BigDecimal.valueOf(100)).intValue(); i++) {
         		firstBD = firstBD.add(BigDecimal.valueOf(0.01));
@@ -42,17 +43,16 @@ public class Animations {
 	}
 	
 	public static void animateUpThumbsUp(int first, int last) throws InterruptedException {
-		BigInteger firstBD = BigInteger.valueOf(first);
-		BigInteger lastBD = BigInteger.valueOf(last);
-		double difference = Math.abs(first-last);
+
+		int difference = Math.abs(first-last);
 		long waitingtime = 1;
 		
 		if(first<last) {
 			for(int i = 0; i < difference; i++) {
 				
-				first = BigInteger.valueOf(first).add(BigInteger.valueOf(1)).intValue();
+				first++;
 				MainScreenController.setThumbsUpSum(first + " łapek!");;
-				System.out.println(firstBD);
+				System.out.println(first);
 				
 				Thread.sleep(50);
 
@@ -62,15 +62,11 @@ public class Animations {
 		}
 	}
 
-	public MainScreenController getMainScreenController() {
+	public static gui.controllers.MainScreenController getMainScreenController() {
 		return MainScreenController;
 	}
 
-	public void setMainScreenController(MainScreenController mainScreenController) {
+	public static void setMainScreenController(gui.controllers.MainScreenController mainScreenController) {
 		MainScreenController = mainScreenController;
 	}
-	
-	
-	
-
 }

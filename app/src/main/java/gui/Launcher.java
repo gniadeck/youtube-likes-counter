@@ -26,10 +26,7 @@ public class Launcher extends Application{
 	
 	public static void main(String[] args)
 	        throws GeneralSecurityException, IOException, GoogleJsonResponseException {
-	    	
 
-		
-		
 	    	try {
 	    		launch(args);
 	    	} catch (Exception e) {

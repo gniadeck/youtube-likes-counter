@@ -27,27 +27,20 @@ public class displayConfigurationController implements Initializable{
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		
-		if(Data.getCurrentConfiguration().getHeader_text() != null) {
-			input_headerText.setText(Data.getCurrentConfiguration().getHeader_text());
-		}
-		if(Data.getCurrentConfiguration().getMiddle_text() != null) {
-			input_middleText.setText(Data.getCurrentConfiguration().getMiddle_text());
-		}
-		
-		
-		button_saveView.setOnAction((EventHandler<ActionEvent>) new EventHandler<ActionEvent>() {
 
+		validateAndSetFields();
+
+		button_saveView.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
 				
 				
 				Data.getCurrentConfiguration().setHeader_text(input_headerText.getText());
 				Data.getCurrentConfiguration().setMiddle_text(input_middleText.getText());
+
 				try {
 					Data.saveData();
 				} catch (ClassNotFoundException | IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				
@@ -57,23 +50,20 @@ public class displayConfigurationController implements Initializable{
 					Parent root = FXMLLoader.load(getClass().getResource("/fxml/configScreen.fxml"));
 					button_saveView.getScene().setRoot(root);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
-				
 			}
-			
-			
 		});
-		
-		
 	}
-    
-    
-    
-    
-    
-    
+
+	private void validateAndSetFields() {
+		if(Data.getCurrentConfiguration().getHeader_text() != null) {
+			input_headerText.setText(Data.getCurrentConfiguration().getHeader_text());
+		}
+		if(Data.getCurrentConfiguration().getMiddle_text() != null) {
+			input_middleText.setText(Data.getCurrentConfiguration().getMiddle_text());
+		}
+	}
+
 
 }

@@ -74,10 +74,4 @@ public class Library {
             .build();
         
     }
-
-	public boolean someLibraryMethod() {
-		return true;
-	}
-    
-    
 }

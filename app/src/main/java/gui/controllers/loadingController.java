@@ -24,7 +24,18 @@ public class loadingController implements Initializable{
 
     @FXML
     private VBox vBox;
-    
+
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		
+		    
+		System.out.println(text_area.getId());
+		db.Data.setLoadingController(this);
+		text_area.setEditable(false);
+		text_area.appendText("Rozpoczynam ładowanie \n");
+
+	}
+
 	public ProgressBar getProgressBar() {
 		return progressBar;
 	}
@@ -41,16 +52,7 @@ public class loadingController implements Initializable{
 		this.text_area = text_area;
 	}
 
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
-		
-		    
-		System.out.println(text_area.getId());
-		db.Data.setLoading(this);
-		text_area.setEditable(false);
-		text_area.appendText("Rozpoczynam ładowanie \n");
 
-	}
 }
 
 		

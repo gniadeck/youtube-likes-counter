@@ -24,359 +24,353 @@ import com.google.api.services.youtube.model.Channel;
 import com.google.api.services.youtube.model.ChannelListResponse;
 import com.google.api.services.youtube.model.PlaylistItem;
 import com.google.api.services.youtube.model.PlaylistItemListResponse;
-import com.google.api.services.youtube.model.SearchListResponse;
-import com.google.api.services.youtube.model.SearchResult;
 import com.google.api.services.youtube.model.Video;
 import com.google.api.services.youtube.model.VideoListResponse;
 
-import configuration.Configuration;
 import db.Data;
 import gui.Animations;
 import gui.controllers.MainScreenController;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.text.Text;
 
 public class YTConnector extends Task {
 
-	MainScreenController MainScreenController;
-	
+    MainScreenController MainScreenController;
 
-	@Override
-	protected Object call() {
-		
-		int likesChangeAmount;
-		double moneyChangeAmount;
-		boolean initialization = true; 
 
-	        
-		//inicjalizacja usługi youtube
+    @Override
+    protected Object call() {
 
-        YouTube youtubeService;
+        int likesChangeAmount;
+        double moneyChangeAmount;
+        boolean initialization = true;
+
+        //inicjalizacja usługi youtube
+        YouTube youtubeService = null;
+        try {
+            youtubeService = Library.getService();
+        } catch (GeneralSecurityException | IOException e1) {
+            e1.printStackTrace();
+        }
+
+        //stwórz i wyślij żądanienie informacji o kanale użytkownika
+        Channel channel = getChannel(youtubeService);
+
+        //uzyskiwanie danych dotyczących listy uploadów
+        String uploadsPlaylist = channel.getContentDetails().getRelatedPlaylists().getUploads();
+
+        YouTube.PlaylistItems.List playlistItemRequest = null;
+        try {
+            playlistItemRequest = youtubeService.playlistItems().list("id,contentDetails,snippet");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        playlistItemRequest.setPlaylistId(uploadsPlaylist);
+
+        playlistItemRequest.setFields("items(contentDetails/videoId,snippet/title" +
+				",snippet/publishedAt,snippet/resourceId/videoId),nextPageToken,pageInfo");
+
+        List<PlaylistItem> playlistItemList = new ArrayList<PlaylistItem>();
+        List<String> videosIDs = new ArrayList<String>();
+
+        LocalDate datapoczatkowa = Data.getCurrentConfiguration().getBegining_date();
+        DateTime dataPublikacji;
+        LocalDate data;
+        Date dataPublikacjiDate;
+
+        //pobieranie spełniających kryteria filmów
+        logText("Pobieranie listy wrzuconych, przed zadaną datą, filmów... ");
+
 		try {
-			youtubeService = Library.getService();
+			getVideosFromPlaylist(playlistItemRequest, playlistItemList, datapoczatkowa);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
-  
-		try {
-			
+		setProgress(40);
+
+        //tworzenie kolekcji filmów spełniających waunki
+        for (int i = 0; i < playlistItemList.size(); i++) {
+
+            //znajdz date publikacji analizowanego filmu
+            dataPublikacji = playlistItemList.get(i).getSnippet().getPublishedAt();
+            dataPublikacjiDate = new Date(dataPublikacji.getValue());
+            data = Instant.ofEpochMilli(dataPublikacji.getValue()).atZone(ZoneId.systemDefault()).toLocalDate();
+
+            if (data.isAfter(datapoczatkowa)) {
+                logText(playlistItemList.get(i).getSnippet().getTitle() + " wrzucony " + data);
+                System.out.println("Dodaje do listy: " + playlistItemList.get(i).getSnippet().getTitle());
+                videosIDs.add(playlistItemList.get(i).getSnippet().getResourceId().getVideoId());
+            }
+        }
+
+        setProgress(60);
+
+        if (videosIDs.size() == 0) {
+            throwErrorAndGetBackToMainScreen("Nie znaleziono pasujących filmów. Spróbuj zmienić datę");
+        }
+
+        //stworzenie stringa zawierajacego ID filmów po przecinku, potrzebne do wysłania jednego requesta, zamiast kilkunastu
+		ArrayList<StringBuilder> stringRequests = buildRequests(videosIDs);
+		logText("Utworzono requesty.");
+
+        List<Video> videosList = new ArrayList<Video>();
+        ArrayList<VideoListResponse> APIResponses = new ArrayList<VideoListResponse>();
+
+        for (int i = 0; i < stringRequests.size(); i++) {
+
+			try {
+				APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
+						.setId(stringRequests.get(i).toString()).execute());
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+
+			videosList.addAll(APIResponses.get(i).getItems());
+            logText("Wykonano request " + i + " z " + stringRequests.size());
+
+        }
+
+        logText("Pobrano " + videosList.size() + " filmów");
+        setProgress(80);
+
+        logText(videosList.get(0).getSnippet().getTitle());
+
+        Double kwota = 0.0;
+        BigInteger likesAmount;
+        DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.getDefault());
+        otherSymbols.setDecimalSeparator('.');
+        DecimalFormat format = new DecimalFormat("0.0#", otherSymbols);
+
+        int liczbaLapekWGore = 0;
+
+        while (true) {
+
+            for (int i = 0; i < videosList.size(); i++) {
+
+                logText("Tytuł wideo: " + videosList.get(i).getSnippet().getTitle());
+                logText("Liczba lapek w góre: " + videosList.get(i).getStatistics().getLikeCount());
+                likesAmount = videosList.get(i).getStatistics().getLikeCount();
+                liczbaLapekWGore = liczbaLapekWGore + likesAmount.intValue();
+                kwota = Double.valueOf(format.format(liczbaLapekWGore * 0.01));
+//	        	
+            }
+
+            logText("-----------------------");
+            logText("Wynik:");
+            logText("Liczba filmow: " + videosList.size());
+            logText("Liczba lapek w góre w sumie: " + liczbaLapekWGore);
+            logText("Zebrana kwota: " + format.format(Double.valueOf(BigDecimal.valueOf(liczbaLapekWGore).multiply(
+                    BigDecimal.valueOf(Double.valueOf(Data.getCurrentConfiguration().getPrzelicznik()))).toString())) + " zł");
+            logText("Ustawiono widok.");
+
+            setProgress(100);
+
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            String currentPlnValue = MainScreenController.getPlnSum().getText().replaceFirst(" zł", "");
+            System.out.println(currentPlnValue);
+            Double currentPlnValueDouble = Double.valueOf(currentPlnValue);
+            try {
+                System.out.println("Wartość: " + Double.valueOf(currentPlnValue));
+                currentPlnValueDouble = Double.valueOf(currentPlnValue);
+            } catch (NumberFormatException e) {
+                System.out.println("Błąd");
+            }
+
+            System.out.println(format.format(liczbaLapekWGore * Double.parseDouble(Data.getCurrentConfiguration().getPrzelicznik())));
+            System.out.println(MainScreenController.getThumbsUpSum().getText().replaceFirst(" łapek!", ""));
+            int currentThumbsUpNumber = (int) Integer.valueOf(MainScreenController.getThumbsUpSum().getText().replaceFirst(" łapek!", ""));
+
+            if (initialization) {
+                MainScreenController.setPlnSum(Double.valueOf(format.format(liczbaLapekWGore * Double.valueOf(Data.getCurrentConfiguration().getPrzelicznik()))).toString() + " zł");
+                MainScreenController.setThumbsUpSum(liczbaLapekWGore + " łapek!");
+            } else {
+
+				try {
+					Animations.animateUpPLN(currentPlnValueDouble, Double.parseDouble(BigDecimal.valueOf(liczbaLapekWGore)
+							.multiply(BigDecimal.valueOf(Double.parseDouble(Data.getCurrentConfiguration().getPrzelicznik()))).toString()));
+					Animations.animateUpThumbsUp(currentThumbsUpNumber, liczbaLapekWGore);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+
+			}
+
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+
+			logText("Wykonuje request ponownie...");
+            setProgress(0);
+            liczbaLapekWGore = 0;
+            initialization = false;
+            APIResponses.clear();
+            videosList.clear();
+
+			try {
+				invokeRequests(youtubeService, stringRequests, videosList, APIResponses);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+    }
+
+	private void invokeRequests(YouTube youtubeService, ArrayList<StringBuilder> stringRequests, List<Video> videosList, ArrayList<VideoListResponse> APIResponses) throws IOException {
+		for (int i = 0; i < stringRequests.size(); i++) {
+
+			APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
+					.setId(stringRequests.get(i).toString()).execute());
+			videosList.addAll(APIResponses.get(i).getItems());
+
+		}
+	}
+
+	private ArrayList<StringBuilder> buildRequests(List<String> videosIDs) {
+		ArrayList<StringBuilder> stringRequests = new ArrayList<StringBuilder>();
 
 
-	        //stwórz i wyślij żądanienie informacji o kanale użytkownika
-	        YouTube.Channels.List channelsListByUsernameRequest = youtubeService.channels().list("snippet,statistics, contentDetails");
-	        channelsListByUsernameRequest.setId(Data.getCurrentConfiguration().getChannel_id());
-	        ChannelListResponse response = channelsListByUsernameRequest.execute();
-	        Channel channel = response.getItems().get(0);
-	        logText("Znaleziono kanał " + channel.getSnippet().getTitle());
-	        setProgress(10);
-	        
+		ArrayList<VideoListResponse> listaRequestow = new ArrayList<VideoListResponse>();
+		System.out.println(Double.valueOf(videosIDs.size() / 49));
+		int numberOfRequests = (int) Math.ceil(Double.valueOf(videosIDs.size()) / 49);
 
-	        //uzyskiwanie danych dotyczących listy uploadów
-	        String uploadsPlaylist = channel.getContentDetails().getRelatedPlaylists().getUploads();
-	        
-	        YouTube.PlaylistItems.List playlistItemRequest =
-	                youtubeService.playlistItems().list("id,contentDetails,snippet");
-	        playlistItemRequest.setPlaylistId(uploadsPlaylist);
-	        
-	        
-	        playlistItemRequest.setFields(
-	                "items(contentDetails/videoId,snippet/title,snippet/publishedAt,snippet/resourceId/videoId),nextPageToken,pageInfo");
+		logText("Liczba zaptyań: " + numberOfRequests);
+		logText("Pobrano: " + videosIDs.size());
 
-	        String nextToken = "";
-	        
-	        List<PlaylistItem> playlistItemList = new ArrayList<PlaylistItem>();
-	        
-	        List<String> videosIDs = new ArrayList<String>();
-	        
-	        LocalDate datapoczatkowa = Data.getCurrentConfiguration().getBegining_date();
-	        DateTime dataPublikacji;
-	        LocalDate data;
-	        Date dataPublikacjiDate;
+		int remainingRequests = videosIDs.size();
+		int videosIDsCounter = 0;
+		int stringBuilderCounter = 0;
 
-	        
-	        //pobieranie spełniających kryteria filmów
-	        logText("Pobieranie listy wrzuconych, przed zadaną datą, filmów... ");
-	        int temp = 0;
-	        do {
-	            playlistItemRequest.setPageToken(nextToken);
-	            PlaylistItemListResponse playlistItemResult = playlistItemRequest.execute();
+		logText("Tworzenie requesta...");
+		while (remainingRequests != 0) {
 
-	            playlistItemList.addAll(playlistItemResult.getItems());
+			stringRequests.add(new StringBuilder());
 
-	            nextToken = playlistItemResult.getNextPageToken();
-	           System.out.append(".");
-	           System.out.println(playlistItemList.get(temp).getSnippet().getPublishedAt());
-	           
-	           if(Instant.ofEpochMilli(playlistItemList.get(temp).getSnippet().getPublishedAt().getValue()).atZone(ZoneId.systemDefault()).toLocalDate()
-	        		   .isBefore(datapoczatkowa)) {
-	        	   
-	        	   break;
-	        	   
-	           }
-	           temp = temp + playlistItemResult.getItems().size();
-	           
-	           
-	        } while (nextToken != null);
-	        
-	        setProgress(40);
+			int currentRequestSize;
 
-	        
-	        
-	        
-	        //tworzenie kolekcji filmów spełniających waunki
-	        for(int i = 0 ; i < playlistItemList.size(); i ++) {
-	        	
-	        	//znajdz date publikacji analizowanego filmu, TODO optymalizacja
-	        	
-	        	dataPublikacji = playlistItemList.get(i).getSnippet().getPublishedAt();
-	        	dataPublikacjiDate = new Date(dataPublikacji.getValue());
-	        	data = Instant.ofEpochMilli(dataPublikacji.getValue()).atZone(ZoneId.systemDefault()).toLocalDate();
-	        	
-	        	if(data.isAfter(datapoczatkowa)) {
-	        		logText(playlistItemList.get(i).getSnippet().getTitle() + " wrzucony " + data);
-	        		
-	        		System.out.println("Dodaje do listy: " + playlistItemList.get(i).getSnippet().getTitle());
-	            	videosIDs.add(playlistItemList.get(i).getSnippet().getResourceId().getVideoId());
-	            	
-	        	}
+			if (remainingRequests % 49 != 0) {
 
-	        	
-	        	
-	        }
-	        setProgress(60);
-	        //swego rodzaju error handler w wypadku braku video które można zliczyć
-	        if(videosIDs.size() == 0) {
-	        	
-	        	throwErrorAndGetBackToMainScreen("Nie znaleziono pasujących filmów. Spróbuj zmienić datę");
-	        	
-	        }
+				currentRequestSize = remainingRequests % 49;
+			} else {
+				currentRequestSize = 49;
+			}
 
-	        //stworzenie stringa zawierajacego ID filmów po przecinku, potrzebne do wysłania jednego requesta, zamiast kilkunastu
-	        ArrayList<StringBuilder> stringRequests = new ArrayList<StringBuilder>();
 
-	        
-	        ArrayList<VideoListResponse> listaRequestow = new ArrayList<VideoListResponse>();
-	        System.out.println(Double.valueOf(videosIDs.size()/49));
-	        int numberOfRequests =  (int) Math.ceil(Double.valueOf(videosIDs.size())/49);
-	        
-	        logText("Liczba zaptyań: " + numberOfRequests);
-	        logText("Pobrano: " + videosIDs.size());
-	        
-	        int remainingRequests = videosIDs.size();
-	        int videosIDsCounter = 0;
-	        int stringBuilderCounter = 0;
-	        
-	        logText("Tworzenie requesta...");
-	        while(remainingRequests != 0) {
-	        	
-	        	stringRequests.add(new StringBuilder());
-	        	
-	        	int currentRequestSize;
-	        	
-	        	if(remainingRequests%49 != 0) {
-	        		
-	        		currentRequestSize = remainingRequests%49;
-	        	} else {
-	        		currentRequestSize = 49;
-	        	}
-	        	
-	        	
-	        	for(int i = 0; i < currentRequestSize; i++) {	        	
-		        	if(i == (1-videosIDs.size())) {
-		        	stringRequests.get(stringBuilderCounter).append(videosIDs.get(videosIDsCounter));
-		        	} else {
-		        	stringRequests.get(stringBuilderCounter).append(videosIDs.get(videosIDsCounter));
-		        	stringRequests.get(stringBuilderCounter).append(",");
-		        	}
-		        	videosIDsCounter++;
-	        }
-	        	
-	        	remainingRequests = remainingRequests - currentRequestSize;
-	        	
+			for (int i = 0; i < currentRequestSize; i++) {
+				if (i == (1 - videosIDs.size())) {
+					stringRequests.get(stringBuilderCounter).append(videosIDs.get(videosIDsCounter));
+				} else {
+					stringRequests.get(stringBuilderCounter).append(videosIDs.get(videosIDsCounter));
+					stringRequests.get(stringBuilderCounter).append(",");
+				}
+				videosIDsCounter++;
+			}
+
+			remainingRequests = remainingRequests - currentRequestSize;
+
 //	        	System.out.println("Request o wielkości: " + currentRequestSize);
 //	        	System.out.println("Treść requesta: " + stringRequests.get(stringBuilderCounter));
-	        	
-	        	stringBuilderCounter++;
-	        	
-	    
-	        	
-	        	
-	        }
-	        
-	        logText("Utworzono requesty.");
-	        
-	           
-	      //lista video, w której przechowywane będą wszystkie obiekty typu video
-	        List<Video> videosList = new ArrayList<Video>();
-	        
-	        ArrayList<VideoListResponse> APIResponses = new ArrayList<VideoListResponse>();
-	        
 
-	        for(int i = 0; i < stringRequests.size(); i++) {
-	        	
-	        	APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
-	        			.setId(stringRequests.get(i).toString()).execute());
-	        	videosList.addAll(APIResponses.get(i).getItems());
-	        	logText("Wykonano request " + i + " z " + stringRequests.size());
-	        	
-	        }
-	     
-	        
-	        logText("Pobrano " + videosList.size() + " filmów");
-	        setProgress(80);
-	        
-	        logText(videosList.get(0).getSnippet().getTitle());
-	        Double kwota = 0.0;
-	        BigInteger likesAmount;
-	        
-	        
-	        DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.getDefault());
-	        otherSymbols.setDecimalSeparator('.');
-	        DecimalFormat format = new DecimalFormat("0.0#" , otherSymbols);
-	        
-	        int liczbaLapekWGore = 0;
-	        
-	        
-	        while(true) {
-	        	
+			stringBuilderCounter++;
 
-	        	
-	        for(int i = 0; i < videosList.size(); i++) {
-	        	
-	        	logText("Tytuł wideo: " + videosList.get(i).getSnippet().getTitle());
-	        	logText("Liczba lapek w góre: " + videosList.get(i).getStatistics().getLikeCount());
-	        	likesAmount = videosList.get(i).getStatistics().getLikeCount();
-	        	liczbaLapekWGore = liczbaLapekWGore + likesAmount.intValue();
-	        	kwota = Double.valueOf(format.format(liczbaLapekWGore * 0.01));
-//	        	
-	        }
-	        
-	        
-	        logText("-----------------------");
-	        logText("Wynik:");
-	        logText("Liczba filmow: " + videosList.size());
-	        logText("Liczba lapek w góre w sumie: " + liczbaLapekWGore);
-	        logText("Zebrana kwota: " + format.format(Double.valueOf(BigDecimal.valueOf(liczbaLapekWGore).multiply(
-	        		BigDecimal.valueOf(Double.valueOf(Data.getCurrentConfiguration().getPrzelicznik()))).toString())) + " zł");
-	        
 
-	        logText("Ustawiono widok.");
-	        setProgress(100);
-	        
-	        try {
-				TimeUnit.SECONDS.sleep(1);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	        
-	        String currentPlnValue = MainScreenController.getPlnSum().getText().replaceFirst(" zł", "");
-	        System.out.println(currentPlnValue);
-	        Double currentPlnValueDouble = Double.valueOf(currentPlnValue);
-	        try {
-	        	System.out.println("Wartość: " + Double.valueOf(currentPlnValue));
-	        	currentPlnValueDouble = Double.valueOf(currentPlnValue);
-	        } catch (NumberFormatException e) {
-	        	System.out.println("Błąd");
-	        	
-	        }
-	        
-	        System.out.println(format.format(liczbaLapekWGore*Double.valueOf(Data.getCurrentConfiguration().getPrzelicznik())));
-	        System.out.println(MainScreenController.getThumbsUpSum().getText().replaceFirst(" łapek!", ""));
-	        int currentThumbsUpNumber = (int) Integer.valueOf(MainScreenController.getThumbsUpSum().getText().replaceFirst(" łapek!", "")) ;
-	        
-	        //TODO zamiana na bigdecimal
-	        if(initialization == true) {
-	        	MainScreenController.setPlnSum(Double.valueOf(format.format(liczbaLapekWGore * Double.valueOf(Data.getCurrentConfiguration().getPrzelicznik()))).toString() + " zł");
-	        	MainScreenController.setThumbsUpSum(liczbaLapekWGore + " łapek!");
-	        } else {
-	        	if(currentPlnValueDouble != null) {
-
-	        		Animations.animateUpPLN(currentPlnValueDouble, Double.valueOf(BigDecimal.valueOf(liczbaLapekWGore)
-	        				.multiply(BigDecimal.valueOf(Double.valueOf(Data.getCurrentConfiguration().getPrzelicznik()))).toString()));
-	        		 Animations.animateUpThumbsUp(currentThumbsUpNumber, liczbaLapekWGore);
-	        		
-	        	}
-	        }
-	        
-
-			
-			Thread.sleep(10000);
-			
-			logText("Wykonuje request ponownie...");
-			setProgress(0);
-			liczbaLapekWGore = 0;
-			initialization = false;
-			APIResponses.clear();
-			videosList.clear();
-			
-	        for(int i = 0; i < stringRequests.size(); i++) {
-	        	
-	        	APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
-	        			.setId(stringRequests.get(i).toString()).execute());
-	        	videosList.addAll(APIResponses.get(i).getItems());
-	        	
-	        }
-	        }
-	        
-		
-		
-		} catch (Exception e) {
-			e.printStackTrace();
-			
 		}
-		
-		return youtubeService;
-    	
-		} catch (GeneralSecurityException | IOException e1) {
-			// TODO Auto-generated catch block
-			System.out.println("IOException");
-			e1.printStackTrace();
-		}
-
-		return null;
-		
-	}
-	
-	
-	public MainScreenController getMainScreenController() {
-		return MainScreenController;
+		return stringRequests;
 	}
 
-	public void setMainScreenController(MainScreenController mainScreenController) {
-		MainScreenController = mainScreenController;
-	}
-	
-	public void throwErrorAndGetBackToMainScreen(String message) {
-		
-    	Platform.runLater(new Runnable() {
+	private void getVideosFromPlaylist(YouTube.PlaylistItems.List playlistItemRequest, List<PlaylistItem> playlistItemList, LocalDate datapoczatkowa) throws IOException {
+		String nextToken = "";
+		int temp = 0;
+		do {
+			playlistItemRequest.setPageToken(nextToken);
+			PlaylistItemListResponse playlistItemResult = playlistItemRequest.execute();
 
-			@Override
-			public void run() {
-				
-				try {
-					MainScreenController.throwErrorAndGetBackToMainScreen(message);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
+			playlistItemList.addAll(playlistItemResult.getItems());
+
+			nextToken = playlistItemResult.getNextPageToken();
+			System.out.append(".");
+			System.out.println(playlistItemList.get(temp).getSnippet().getPublishedAt());
+
+			if (Instant.ofEpochMilli(playlistItemList.get(temp).getSnippet().getPublishedAt().getValue()).atZone(ZoneId.systemDefault()).toLocalDate()
+					.isBefore(datapoczatkowa)) {
+
+				break;
+
 			}
-    		
-    	});
+			temp = temp + playlistItemResult.getItems().size();
+
+
+		} while (nextToken != null);
 	}
-	
-	public void logText(String text) {
-		
-		db.Data.getLoading().getText_area().appendText(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)) + ": " + text + "\n");
-		
-	}
-	
-	public void setProgress(double num) {
-		db.Data.getLoading().getProgressBar().setProgress(num);
-	}
+
+	private Channel getChannel(YouTube youtubeService) {
+        YouTube.Channels.List channelsListByUsernameRequest = null;
+        try {
+            channelsListByUsernameRequest = youtubeService.channels().list("snippet,statistics, contentDetails");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        channelsListByUsernameRequest.setId(Data.getCurrentConfiguration().getChannel_id());
+
+        ChannelListResponse response = null;
+        try {
+            response = channelsListByUsernameRequest.execute();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        Channel channel = response.getItems().get(0);
+        logText("Znaleziono kanał " + channel.getSnippet().getTitle());
+        setProgress(10);
+        return channel;
+    }
+
+
+    public MainScreenController getMainScreenController() {
+        return MainScreenController;
+    }
+
+    public void setMainScreenController(MainScreenController mainScreenController) {
+        MainScreenController = mainScreenController;
+    }
+
+    public void throwErrorAndGetBackToMainScreen(String message) {
+
+        Platform.runLater(new Runnable() {
+
+            @Override
+            public void run() {
+
+                try {
+                    MainScreenController.throwErrorAndGetBackToMainScreen(message);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        });
+    }
+
+    public void logText(String text) {
+        Platform.runLater(() -> {
+            db.Data.getLoadingController().getText_area().appendText(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)) + ": " + text + "\n");
+        });
+
+
+    }
+
+    public void setProgress(double num) {
+        db.Data.getLoadingController().getProgressBar().setProgress(num);
+    }
 
 }

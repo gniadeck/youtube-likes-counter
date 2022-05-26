@@ -30,6 +30,41 @@ public class MainScreenController implements Initializable{
     @FXML
     private Text text_middle;
 
+
+
+	@Override
+	public void initialize(URL arg0, ResourceBundle arg1) {
+
+		validateAndSetFields();
+
+		YTConnector YTConnector = new YTConnector();
+		YTConnector.setMainScreenController(this);
+		Animations animations = new Animations();
+		animations.setMainScreenController(this);
+
+		Thread ytAPI = new Thread(YTConnector);
+		ytAPI.start();
+
+	}
+
+	public void throwErrorAndGetBackToMainScreen (String message) throws IOException {
+		
+		Alert alert = new Alert(AlertType.ERROR, message, ButtonType.OK);
+		alert.showAndWait();
+		text_middle.getScene().setRoot(FXMLLoader.load(getClass().getClassLoader().getResource("fxml/configScreen.fxml")));
+		
+		
+	}
+
+	private void validateAndSetFields() {
+		if(db.Data.getCurrentConfiguration().getHeader_text() != null && db.Data.getCurrentConfiguration().getHeader_text() != "") {
+			setText_header(db.Data.getCurrentConfiguration().getHeader_text());
+		}
+		if(db.Data.getCurrentConfiguration().getMiddle_text() != null && db.Data.getCurrentConfiguration().getMiddle_text() != "") {
+			setText_middle(db.Data.getCurrentConfiguration().getMiddle_text());
+		}
+	}
+
 	public  Text getPlnSum() {
 		return plnSum;
 	}
@@ -45,7 +80,7 @@ public class MainScreenController implements Initializable{
 	public  void setThumbsUpSum(String text) {
 		this.thumbsUpSum.setText(text);
 	}
-	
+
 
 	public Text getText_header() {
 		return text_header;
@@ -63,42 +98,6 @@ public class MainScreenController implements Initializable{
 		this.text_middle.setText(text_middle);
 	}
 
-	@Override
-	public void initialize(URL arg0, ResourceBundle arg1) {
-		
-		if(db.Data.getCurrentConfiguration().getHeader_text() != null && db.Data.getCurrentConfiguration().getHeader_text() != "") {
-			setText_header(db.Data.getCurrentConfiguration().getHeader_text());
-		}
-		if(db.Data.getCurrentConfiguration().getMiddle_text() != null && db.Data.getCurrentConfiguration().getMiddle_text() != "") {
-			
-			setText_middle(db.Data.getCurrentConfiguration().getMiddle_text());
-			
-		}
-
-
-		YTConnector YTConnector = new YTConnector();
-		YTConnector.setMainScreenController(this);
-		Animations animations = new Animations();
-		animations.setMainScreenController(this);
-
-
-		
-		
-		Thread ytAPI = new Thread(YTConnector);
-		
-		ytAPI.start();
-		
-
-	}
-	
-	public void throwErrorAndGetBackToMainScreen (String message) throws IOException {
-		
-		Alert alert = new Alert(AlertType.ERROR, message, ButtonType.OK);
-		alert.showAndWait();
-		text_middle.getScene().setRoot(FXMLLoader.load(getClass().getClassLoader().getResource("fxml/configScreen.fxml")));
-		
-		
-	}
 	
 
     
