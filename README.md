@@ -6,6 +6,9 @@ Software powstał specjalnie dla jednego z większych polskich twórców interne
 
 Kod jest zoptymalizowany pod kątem wysyłanych requestów, tak aby na pewno nie przekroczyć limitu 10.000 żądań. Wszystkie filmy są zapisywane jako obiekty filmów, a następnie jedynie odświeża się ich konkretny stan. Wysyłane są największe możliwe requesty (50 filmów jednocześnie) tak aby zoptymalizować korzystanie z API. Jeżeli ktoś z czytelników ma jakieś uwagi do kodu, ma ochotę na pull requesta to jak najbardziej zapraszam do uczestnictwa :))
 
+![app_demo](https://user-images.githubusercontent.com/77535280/170532418-1fb6509d-6226-4f8a-8804-acb458206c75.gif)
+
+
 # TODO
 
 - Dodanie możliwości konfiguracji odstępu między odświeżeniami licznika
