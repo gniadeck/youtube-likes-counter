@@ -127,4 +127,5 @@ Dodano równolegle działające okienko z ładowaniem i logami
 ![image](https://user-images.githubusercontent.com/77535280/155524078-37bad384-f65b-4e86-b23e-a175c3a73c89.png)
 
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b16d5a6b091b489faab7476e7c69c6d2)](https://app.codacy.com/gh/komp15/youtube-likes-counter?utm_source=github.com&utm_medium=referral&utm_content=komp15/youtube-likes-counter&utm_campaign=Badge_Grade_Settings)
 [![CodeFactor](https://www.codefactor.io/repository/github/komp15/youtube-likes-counter/badge)](https://www.codefactor.io/repository/github/komp15/youtube-likes-counter)
