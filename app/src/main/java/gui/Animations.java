@@ -1,15 +1,11 @@
 package gui;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 import gui.controllers.MainScreenController;
-import lombok.Getter;
-import lombok.Setter;
 
 public class Animations {
 	
@@ -62,11 +58,11 @@ public class Animations {
 		}
 	}
 
-	public static gui.controllers.MainScreenController getMainScreenController() {
+	public static MainScreenController getMainScreenController() {
 		return MainScreenController;
 	}
 
-	public static void setMainScreenController(gui.controllers.MainScreenController mainScreenController) {
+	public static void setMainScreenController(MainScreenController mainScreenController) {
 		MainScreenController = mainScreenController;
 	}
 }

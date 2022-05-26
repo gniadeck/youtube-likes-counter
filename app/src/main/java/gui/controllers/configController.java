@@ -2,11 +2,9 @@ package gui.controllers;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 
-import configuration.Configuration;
 import db.Data;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;

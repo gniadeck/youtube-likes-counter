@@ -39,7 +39,7 @@ public class YTConnector extends Task {
 
 
     @Override
-    protected Object call() {
+    protected Object call() throws IOException {
 
         int likesChangeAmount;
         double moneyChangeAmount;
@@ -311,22 +311,16 @@ public class YTConnector extends Task {
 		} while (nextToken != null);
 	}
 
-	private Channel getChannel(YouTube youtubeService) {
+	private Channel getChannel(YouTube youtubeService) throws IOException {
         YouTube.Channels.List channelsListByUsernameRequest = null;
-        try {
             channelsListByUsernameRequest = youtubeService.channels().list("snippet,statistics, contentDetails");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
 
         channelsListByUsernameRequest.setId(Data.getCurrentConfiguration().getChannel_id());
 
         ChannelListResponse response = null;
-        try {
             response = channelsListByUsernameRequest.execute();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
 
         Channel channel = response.getItems().get(0);
         logText("Znaleziono kanał " + channel.getSnippet().getTitle());
@@ -363,14 +357,14 @@ public class YTConnector extends Task {
 
     public void logText(String text) {
         Platform.runLater(() -> {
-            db.Data.getLoadingController().getText_area().appendText(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)) + ": " + text + "\n");
+            Data.getLoadingController().getText_area().appendText(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)) + ": " + text + "\n");
         });
 
 
     }
 
     public void setProgress(double num) {
-        db.Data.getLoadingController().getProgressBar().setProgress(num);
+        Data.getLoadingController().getProgressBar().setProgress(num);
     }
 
 }

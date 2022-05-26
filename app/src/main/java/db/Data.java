@@ -75,11 +75,11 @@ public abstract class Data {
 		Data.currentConfiguration = currentConfiguration;
 	}
 
-	public static gui.controllers.loadingController getLoadingController() {
+	public static loadingController getLoadingController() {
 		return loadingController;
 	}
 
-	public static void setLoadingController(gui.controllers.loadingController loadingController) {
+	public static void setLoadingController(loadingController loadingController) {
 		Data.loadingController = loadingController;
 	}
 }
