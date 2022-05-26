@@ -58,16 +58,12 @@ public class YTConnector extends Task {
         String uploadsPlaylist = channel.getContentDetails().getRelatedPlaylists().getUploads();
 
         YouTube.PlaylistItems.List playlistItemRequest = null;
-        try {
-            playlistItemRequest = youtubeService.playlistItems().list("id,contentDetails,snippet");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        playlistItemRequest = youtubeService.playlistItems().list("id,contentDetails,snippet");
 
         playlistItemRequest.setPlaylistId(uploadsPlaylist);
 
         playlistItemRequest.setFields("items(contentDetails/videoId,snippet/title" +
-				",snippet/publishedAt,snippet/resourceId/videoId),nextPageToken,pageInfo");
+                ",snippet/publishedAt,snippet/resourceId/videoId),nextPageToken,pageInfo");
 
         List<PlaylistItem> playlistItemList = new ArrayList<PlaylistItem>();
         List<String> videosIDs = new ArrayList<String>();
@@ -75,33 +71,21 @@ public class YTConnector extends Task {
         LocalDate datapoczatkowa = Data.getCurrentConfiguration().getBegining_date();
         DateTime dataPublikacji;
         LocalDate data;
-        Date dataPublikacjiDate;
+
 
         //pobieranie spełniających kryteria filmów
         logText("Pobieranie listy wrzuconych, przed zadaną datą, filmów... ");
 
-		try {
-			getVideosFromPlaylist(playlistItemRequest, playlistItemList, datapoczatkowa);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+        try {
+            getVideosFromPlaylist(playlistItemRequest, playlistItemList, datapoczatkowa);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-		setProgress(40);
+        setProgress(40);
 
         //tworzenie kolekcji filmów spełniających waunki
-        for (int i = 0; i < playlistItemList.size(); i++) {
-
-            //znajdz date publikacji analizowanego filmu
-            dataPublikacji = playlistItemList.get(i).getSnippet().getPublishedAt();
-            dataPublikacjiDate = new Date(dataPublikacji.getValue());
-            data = Instant.ofEpochMilli(dataPublikacji.getValue()).atZone(ZoneId.systemDefault()).toLocalDate();
-
-            if (data.isAfter(datapoczatkowa)) {
-                logText(playlistItemList.get(i).getSnippet().getTitle() + " wrzucony " + data);
-                System.out.println("Dodaje do listy: " + playlistItemList.get(i).getSnippet().getTitle());
-                videosIDs.add(playlistItemList.get(i).getSnippet().getResourceId().getVideoId());
-            }
-        }
+        filterVideos(playlistItemList, videosIDs, datapoczatkowa);
 
         setProgress(60);
 
@@ -110,32 +94,19 @@ public class YTConnector extends Task {
         }
 
         //stworzenie stringa zawierajacego ID filmów po przecinku, potrzebne do wysłania jednego requesta, zamiast kilkunastu
-		ArrayList<StringBuilder> stringRequests = buildRequests(videosIDs);
-		logText("Utworzono requesty.");
+        ArrayList<StringBuilder> stringRequests = buildRequests(videosIDs);
+        logText("Utworzono requesty.");
 
         List<Video> videosList = new ArrayList<Video>();
         ArrayList<VideoListResponse> APIResponses = new ArrayList<VideoListResponse>();
 
-        for (int i = 0; i < stringRequests.size(); i++) {
-
-			try {
-				APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
-						.setId(stringRequests.get(i).toString()).execute());
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-
-			videosList.addAll(APIResponses.get(i).getItems());
-            logText("Wykonano request " + i + " z " + stringRequests.size());
-
-        }
+        executeRequests(youtubeService, stringRequests, videosList, APIResponses);
 
         logText("Pobrano " + videosList.size() + " filmów");
         setProgress(80);
 
         logText(videosList.get(0).getSnippet().getTitle());
 
-        Double kwota = 0.0;
         BigInteger likesAmount;
         DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.getDefault());
         otherSymbols.setDecimalSeparator('.');
@@ -143,16 +114,25 @@ public class YTConnector extends Task {
 
         int liczbaLapekWGore = 0;
 
+        loop(initialization, youtubeService, stringRequests, videosList, APIResponses, format, liczbaLapekWGore);
+
+        return null;
+    }
+
+
+    private void loop(boolean initialization, YouTube youtubeService, ArrayList<StringBuilder> stringRequests, List<Video> videosList, ArrayList<VideoListResponse> APIResponses, DecimalFormat format, int liczbaLapekWGore) {
+
+        BigInteger likesAmount;
+
         while (true) {
 
-            for (int i = 0; i < videosList.size(); i++) {
+            for (Video video : videosList) {
 
-                logText("Tytuł wideo: " + videosList.get(i).getSnippet().getTitle());
-                logText("Liczba lapek w góre: " + videosList.get(i).getStatistics().getLikeCount());
-                likesAmount = videosList.get(i).getStatistics().getLikeCount();
+                logText("Tytuł wideo: " + video.getSnippet().getTitle());
+                logText("Liczba lapek w góre: " + video.getStatistics().getLikeCount());
+                likesAmount = video.getStatistics().getLikeCount();
                 liczbaLapekWGore = liczbaLapekWGore + likesAmount.intValue();
-                kwota = Double.valueOf(format.format(liczbaLapekWGore * 0.01));
-//	        	
+                //
             }
 
             logText("-----------------------");
@@ -219,10 +199,42 @@ public class YTConnector extends Task {
 				throw new RuntimeException(e);
 			}
 		}
-
     }
 
-	private void invokeRequests(YouTube youtubeService, ArrayList<StringBuilder> stringRequests, List<Video> videosList, ArrayList<VideoListResponse> APIResponses) throws IOException {
+    private void executeRequests(YouTube youtubeService, ArrayList<StringBuilder> stringRequests, List<Video> videosList, ArrayList<VideoListResponse> APIResponses) {
+        for (int i = 0; i < stringRequests.size(); i++) {
+
+			try {
+				APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
+						.setId(stringRequests.get(i).toString()).execute());
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+
+			videosList.addAll(APIResponses.get(i).getItems());
+            logText("Wykonano request " + i + " z " + stringRequests.size());
+
+        }
+    }
+
+    private void filterVideos(List<PlaylistItem> playlistItemList, List<String> videosIDs, LocalDate datapoczatkowa) {
+        LocalDate data;
+        DateTime dataPublikacji;
+        for (int i = 0; i < playlistItemList.size(); i++) {
+
+            //znajdz date publikacji analizowanego filmu
+            dataPublikacji = playlistItemList.get(i).getSnippet().getPublishedAt();
+            data = Instant.ofEpochMilli(dataPublikacji.getValue()).atZone(ZoneId.systemDefault()).toLocalDate();
+
+            if (data.isAfter(datapoczatkowa)) {
+                logText(playlistItemList.get(i).getSnippet().getTitle() + " wrzucony " + data);
+                System.out.println("Dodaje do listy: " + playlistItemList.get(i).getSnippet().getTitle());
+                videosIDs.add(playlistItemList.get(i).getSnippet().getResourceId().getVideoId());
+            }
+        }
+    }
+
+    private void invokeRequests(YouTube youtubeService, ArrayList<StringBuilder> stringRequests, List<Video> videosList, ArrayList<VideoListResponse> APIResponses) throws IOException {
 		for (int i = 0; i < stringRequests.size(); i++) {
 
 			APIResponses.add(youtubeService.videos().list("id, statistics,snippet")
@@ -235,9 +247,7 @@ public class YTConnector extends Task {
 	private ArrayList<StringBuilder> buildRequests(List<String> videosIDs) {
 		ArrayList<StringBuilder> stringRequests = new ArrayList<StringBuilder>();
 
-
-		ArrayList<VideoListResponse> listaRequestow = new ArrayList<VideoListResponse>();
-		System.out.println(Double.valueOf(videosIDs.size() / 49));
+        System.out.println(Double.valueOf(videosIDs.size() / 49));
 		int numberOfRequests = (int) Math.ceil(Double.valueOf(videosIDs.size()) / 49);
 
 		logText("Liczba zaptyań: " + numberOfRequests);
@@ -261,7 +271,6 @@ public class YTConnector extends Task {
 				currentRequestSize = 49;
 			}
 
-
 			for (int i = 0; i < currentRequestSize; i++) {
 				if (i == (1 - videosIDs.size())) {
 					stringRequests.get(stringBuilderCounter).append(videosIDs.get(videosIDsCounter));
@@ -274,11 +283,7 @@ public class YTConnector extends Task {
 
 			remainingRequests = remainingRequests - currentRequestSize;
 
-//	        	System.out.println("Request o wielkości: " + currentRequestSize);
-//	        	System.out.println("Treść requesta: " + stringRequests.get(stringBuilderCounter));
-
 			stringBuilderCounter++;
-
 
 		}
 		return stringRequests;

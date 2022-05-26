@@ -16,7 +16,6 @@ public class AnimationUtils {
 		BigDecimal firstBD = BigDecimal.valueOf(first);
 		BigDecimal lastBD = BigDecimal.valueOf(last);
 		BigDecimal differenceBD =firstBD.subtract(lastBD).abs();
-		long waitingtime = 1;
 		DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.getDefault());
         otherSymbols.setDecimalSeparator('.');
         DecimalFormat format = new DecimalFormat("0.00" , otherSymbols);
@@ -46,7 +45,7 @@ public class AnimationUtils {
 			for(int i = 0; i < difference; i++) {
 				
 				first++;
-				MainScreenController.setThumbsUpSum(first + " łapek!");;
+				MainScreenController.setThumbsUpSum(first + " łapek!");
 				System.out.println(first);
 				
 				Thread.sleep(50);

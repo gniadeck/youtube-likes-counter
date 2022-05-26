@@ -22,7 +22,7 @@ import javafx.stage.Stage;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 
-public class configController implements Initializable {
+public class ConfigController implements Initializable {
 
     @FXML
     private Button button_displayCounter;
@@ -106,6 +106,7 @@ public class configController implements Initializable {
 
                 } catch (IOException e) {
                     Alert alert = new Alert(AlertType.ERROR, "Wystąpił błąd " + e.getStackTrace().toString(), ButtonType.OK);
+                    alert.showAndWait();
                     e.printStackTrace();
                 }
 
@@ -147,7 +148,7 @@ public class configController implements Initializable {
             alert.showAndWait();
         }
 
-        if (apiKey == "" || apiKey == null) {
+        if (apiKey.equals("")) {
             Alert alert = new Alert(AlertType.ERROR, "Wpisz przelicznik", ButtonType.OK);
             alert.showAndWait();
             return false;
@@ -158,12 +159,9 @@ public class configController implements Initializable {
 
     public boolean saveConfigurationFromScreen(boolean validateData) {
 
-        if (validateData) {
-            if (!validateData(input_apiKey.getText(), input_startDate.getValue())) {
+        if (validateData && !validateData(input_apiKey.getText(), input_startDate.getValue())) {
                 return false;
             }
-
-        }
 
         try {
             Data.getCurrentConfiguration().setBegining_date(input_startDate.getValue());
